@@ -31,21 +31,12 @@ public class CorsiRestController {
     @Autowired
     private CorsiMapper corsiMapper;
 
-    public CorsiDTO getCorsiById(Long id) {
-        Corsi corso = corsiRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Corso non trovato con id: " + id));
-        return corsiMapper.toDTO(corso);
-    }
-
     @GetMapping
     public ResponseEntity<List<CorsiDTO>> getCorsiDTO() {
-        List<CorsiDTO> corsiDTO= corsiRepository.findAll()
-                .stream()
-                .map(corso -> new CorsiDTO(corso.getNomeCorso(), corso.getAnnoAccademico()))
-                .collect(Collectors.toList());
-
+        List<CorsiDTO> corsiDTO = corsiService.getAllCorsi();
         return new ResponseEntity<>(corsiDTO, HttpStatus.OK);
     }
+
 
     @GetMapping("/corsi")
     public ResponseEntity<?> getCorsiByGetForObject() {
@@ -56,6 +47,12 @@ public class CorsiRestController {
 
         return new ResponseEntity<>(Arrays.asList(CorsiData), HttpStatus.OK);
 
+    }
+
+    @PostMapping
+    public ResponseEntity<CorsiDTO> creaCorso(@RequestBody CorsiDTO dto) {
+        CorsiDTO creato = corsiService.createCorso(dto);
+        return ResponseEntity.status(HttpStatus.CREATED).body(creato);
     }
 
 

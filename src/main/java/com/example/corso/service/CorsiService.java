@@ -10,6 +10,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -25,17 +26,67 @@ public class CorsiService {
     @Autowired
     private RestTemplate restTemplate;
 
-    public CorsiDTO getCorsyById(Long id) {
+    public List<CorsiDTO> getAllCorsi() {
+        List<Corsi> corsiList = corsiRepository.findAll();
+        List<CorsiDTO> dtoList = new ArrayList<>();
 
-        Corsi corsi = corsiRepository.findById(id).orElseThrow(() -> new RuntimeException("corso non trovato con id: " +id));
+        for (Corsi corso : corsiList) {
+            CorsiDTO dto = corsiMapper.toDTO(corso);
+            Long docenteId = corso.getIdDocente();
 
-        CorsiDTO corsiDTO = corsiMapper.toDTO(corsi);
+            if (docenteId != null) {
+                try {
+                    DocenteResponse docente = restTemplate.getForObject(
+                            "http://localhost:8080/docenti/{id}",
+                            DocenteResponse.class,
+                            docenteId
+                    );
 
-        DocenteResponse docenteResponse = restTemplate.getForObject("http://localhost:8080/docenti", DocenteResponse.class,docentId);
+                    if (docente != null) {
+                        dto.setNomeDocente(docente.getNome());
+                        dto.setCognomeDocente(docente.getCognome());
+                    }
 
-        corsiDTO.setDocenteResponse(docenteResponse);
-        return corsiDTO;
+                } catch (Exception e) {
+                    System.out.println("Errore nel recupero del docente con id: " + docenteId);
+                    e.printStackTrace();
+                }
+            }
 
+            dtoList.add(dto);
+        }
+
+        return dtoList;
+    }
+
+
+
+    public CorsiDTO createCorso(CorsiDTO dto) {
+        if (dto.getDocenteResponse() == null) {
+            throw new RuntimeException("ID docente mancante");
+        }
+
+        DocenteResponse docenteResponse = restTemplate.getForObject(
+                "http://localhost:8080/docenti/{id}",
+                DocenteResponse.class,
+                dto.getDocenteResponse()
+        );
+
+        if (docenteResponse == null) {
+            throw new RuntimeException("Docente non trovato con id: " + dto.getDocenteResponse());
+        }
+
+        Corsi corsi = new Corsi();
+        corsi.setNomeCorso(dto.getNomeCorso());
+        corsi.setAnnoAccademico(dto.getAnnoAccademico());
+        corsi.setIdDocente(dto.getDocenteResponse().getId());
+
+        Corsi salvato = corsiRepository.save(corsi);
+
+        CorsiDTO response = corsiMapper.toDTO(salvato);
+        response.setDocenteResponse(docenteResponse);
+
+        return response;
     }
 
     public List<Corsi> findAll() {
@@ -46,8 +97,8 @@ public class CorsiService {
         return corsiRepository.findById(id).orElseThrow();
     }
 
-    public Corsi save(Corsi corso) {
-        return corsiRepository.save(corso);
+    public Corsi save(Corsi corsi) {
+        return corsiRepository.save(corsi);
     }
 
     public void delete(Long id) {

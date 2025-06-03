@@ -5,8 +5,6 @@ import com.example.corso.data.dto.CorsiDTO;
 import com.example.corso.entity.Corsi;
 import org.mapstruct.Mapper;
 
-import java.util.Optional;
-
 @Mapper(componentModel = "spring")
 public interface CorsiMapper {
 

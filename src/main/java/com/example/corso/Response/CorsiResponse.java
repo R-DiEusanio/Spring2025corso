@@ -1,19 +1,19 @@
-package com.example.corso.data.dto;
+package com.example.corso.Response;
 
-import com.example.corso.Response.DocenteResponse;
+public class CorsiResponse {
 
-public class CorsiDTO {
-
+    private Integer id;
     private String nomeCorso;
     private Integer annoAccademico;
 
     private DocenteResponse docenteResponse;
 
-    public CorsiDTO(String nomeCorso, Integer annoAccademico) {
+    public Integer getId() {
+        return id;
+    }
 
-        this.nomeCorso = nomeCorso;
-        this.annoAccademico = annoAccademico;
-
+    public void setId(Integer id) {
+        this.id = id;
     }
 
     public String getNomeCorso() {
@@ -39,5 +39,4 @@ public class CorsiDTO {
     public void setDocenteResponse(DocenteResponse docenteResponse) {
         this.docenteResponse = docenteResponse;
     }
-
 }

@@ -21,6 +21,7 @@ public class Corsi {
     public Corsi(String nomeCorso, Integer annoAccademico) {
         this.nomeCorso = nomeCorso;
         this.annoAccademico = annoAccademico;
+
     }
 
     public Long getId() {
@@ -46,4 +47,5 @@ public class Corsi {
     public void setAnnoAccademico(Integer annoAccademico) {
         this.annoAccademico = annoAccademico;
     }
+
 }

@@ -1,14 +1,18 @@
 package com.example.corso.controller;
 
-import com.example.corso.dto.CorsiDTO;
+import com.example.corso.Response.CorsiResponse;
+import com.example.corso.data.dto.CorsiDTO;
 import com.example.corso.entity.Corsi;
 import com.example.corso.mapper.CorsiMapper;
 import com.example.corso.service.CorsiService;
+import com.example.corso.repository.CorsiRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.RestTemplate;
 
-import java.util.List;
+import java.net.URI;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @RestController
@@ -19,40 +23,40 @@ public class CorsiRestController {
     private CorsiService corsiService;
 
     @Autowired
+    private CorsiRepository corsiRepository;
+
+    @Autowired
+    private RestTemplate restTemplate;
+
+    @Autowired
     private CorsiMapper corsiMapper;
 
+    public CorsiDTO getCorsiById(Long id) {
+        Corsi corso = corsiRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Corso non trovato con id: " + id));
+        return corsiMapper.toDTO(corso);
+    }
+
     @GetMapping
-    public ResponseEntity<List<CorsiDTO>> getAll() {
-        List<Corsi> corsi = corsiService.findAll();
-        List<CorsiDTO> dto = corsi.stream().map(corsiMapper::toDTO).collect(Collectors.toList());
-        return ResponseEntity.ok(dto);
+    public ResponseEntity<List<CorsiDTO>> getCorsiDTO() {
+        List<CorsiDTO> corsiDTO= corsiRepository.findAll()
+                .stream()
+                .map(corso -> new CorsiDTO(corso.getNomeCorso(), corso.getAnnoAccademico()))
+                .collect(Collectors.toList());
+
+        return new ResponseEntity<>(corsiDTO, HttpStatus.OK);
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<CorsiDTO> getById(@PathVariable Long id) {
-        Corsi corsi = corsiService.get(id);
-        return ResponseEntity.ok(corsiMapper.toDTO(corsi));
+    @GetMapping("/corsi")
+    public ResponseEntity<?> getCorsiByGetForObject() {
+
+        String URI_CORSI = "http://localhost:8081/corsi";
+
+        Corsi[] CorsiData = restTemplate.getForObject(URI_CORSI,Corsi[].class);
+
+        return new ResponseEntity<>(Arrays.asList(CorsiData), HttpStatus.OK);
+
     }
 
-    @PostMapping
-    public ResponseEntity<CorsiDTO> create(@RequestBody CorsiDTO dto) {
-        Corsi corsi = new Corsi();
-        corsi.setNomeCorso(dto.getNomeCorso());
-        corsi.setAnnoAccademico(dto.getAnnoAccademico());
-        return ResponseEntity.ok(corsiMapper.toDTO(corsiService.save(corsi)));
-    }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<CorsiDTO> update(@PathVariable Long id, @RequestBody CorsiDTO dto) {
-        Corsi esistente = corsiService.get(id);
-        esistente.setNomeCorso(dto.getNomeCorso());
-        esistente.setAnnoAccademico(dto.getAnnoAccademico());
-        return ResponseEntity.ok(corsiMapper.toDTO(corsiService.save(esistente)));
-    }
-
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
-        corsiService.delete(id);
-        return ResponseEntity.noContent().build();
-    }
 }

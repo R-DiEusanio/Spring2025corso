@@ -1,5 +1,6 @@
 package com.example.corso.entity;
 
+import com.example.corso.data.dto.CorsiDTO;
 import jakarta.persistence.*;
 
 @Entity
@@ -16,11 +17,15 @@ public class Corsi {
     @Column(name = "anno_accademico", nullable = false)
     private Integer annoAccademico;
 
+    @Column(name = "id_docente", nullable = false)
+    private Long idDocente;
+
     public Corsi() {}
 
-    public Corsi(String nomeCorso, Integer annoAccademico) {
+    public Corsi(String nomeCorso, Integer annoAccademico,Long idDocente) {
         this.nomeCorso = nomeCorso;
         this.annoAccademico = annoAccademico;
+        this.idDocente = idDocente;
     }
 
     public Long getId() {
@@ -45,5 +50,13 @@ public class Corsi {
 
     public void setAnnoAccademico(Integer annoAccademico) {
         this.annoAccademico = annoAccademico;
+    }
+
+    public Long getDocenteId() {
+        return idDocente;
+    }
+
+    public void setDocenteId(Long docenteId) {
+        this.idDocente = docenteId;
     }
 }

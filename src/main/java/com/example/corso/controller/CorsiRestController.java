@@ -1,6 +1,6 @@
 package com.example.corso.controller;
 
-import com.example.corso.dto.CorsiDTO;
+import com.example.corso.data.dto.CorsiDTO;
 import com.example.corso.entity.Corsi;
 import com.example.corso.mapper.CorsiMapper;
 import com.example.corso.service.CorsiService;
@@ -23,36 +23,39 @@ public class CorsiRestController {
 
     @GetMapping
     public ResponseEntity<List<CorsiDTO>> getAll() {
-        List<Corsi> corsi = corsiService.findAll();
-        List<CorsiDTO> dto = corsi.stream().map(corsiMapper::toDTO).collect(Collectors.toList());
-        return ResponseEntity.ok(dto);
+        List<CorsiDTO> corsiDTO = corsiService.findAll();
+        return ResponseEntity.ok(corsiDTO);
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<CorsiDTO> getById(@PathVariable Long id) {
-        Corsi corsi = corsiService.get(id);
-        return ResponseEntity.ok(corsiMapper.toDTO(corsi));
+        CorsiDTO corsoDTO = corsiService.get(id);
+        return ResponseEntity.ok(corsoDTO);
     }
 
     @PostMapping
     public ResponseEntity<CorsiDTO> create(@RequestBody CorsiDTO dto) {
-        Corsi corsi = new Corsi();
-        corsi.setNomeCorso(dto.getNomeCorso());
-        corsi.setAnnoAccademico(dto.getAnnoAccademico());
-        return ResponseEntity.ok(corsiMapper.toDTO(corsiService.save(corsi)));
+        CorsiDTO saved = corsiService.save(dto);
+        return ResponseEntity.ok(saved);
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<CorsiDTO> update(@PathVariable Long id, @RequestBody CorsiDTO dto) {
-        Corsi esistente = corsiService.get(id);
+        CorsiDTO esistente = corsiService.get(id);
+
         esistente.setNomeCorso(dto.getNomeCorso());
         esistente.setAnnoAccademico(dto.getAnnoAccademico());
-        return ResponseEntity.ok(corsiMapper.toDTO(corsiService.save(esistente)));
+
+        if (dto.getIdDocente() != null) {
+            esistente.setIdDocente(dto.getIdDocente());
+        }
+
+        CorsiDTO updated = corsiService.save(esistente);
+        return ResponseEntity.ok(updated);
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
-        corsiService.delete(id);
-        return ResponseEntity.noContent().build();
-    }
+
+
+
+
 }

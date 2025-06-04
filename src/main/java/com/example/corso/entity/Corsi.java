@@ -16,11 +16,15 @@ public class Corsi {
     @Column(name = "anno_accademico", nullable = false)
     private Integer annoAccademico;
 
+    @Column(name = "id_docente",nullable = false)
+    private Long idDocente;
+
     public Corsi() {}
 
-    public Corsi(String nomeCorso, Integer annoAccademico) {
+    public Corsi(String nomeCorso, Integer annoAccademico,Long idDocente) {
         this.nomeCorso = nomeCorso;
         this.annoAccademico = annoAccademico;
+        this.idDocente = idDocente;
     }
 
     public Long getId() {
@@ -45,5 +49,13 @@ public class Corsi {
 
     public void setAnnoAccademico(Integer annoAccademico) {
         this.annoAccademico = annoAccademico;
+    }
+
+    public Long getIdDocente() {
+        return idDocente;
+    }
+
+    public void setIdDocente(Long idDocente) {
+        this.idDocente = idDocente;
     }
 }

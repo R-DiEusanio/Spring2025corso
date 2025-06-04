@@ -1,10 +1,12 @@
 package com.example.corso.controller;
 
-import com.example.corso.dto.CorsiDTO;
+import com.example.corso.data.dto.CorsiCreateDTO;
+import com.example.corso.data.dto.CorsiDTO;
 import com.example.corso.entity.Corsi;
 import com.example.corso.mapper.CorsiMapper;
 import com.example.corso.service.CorsiService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -22,10 +24,8 @@ public class CorsiRestController {
     private CorsiMapper corsiMapper;
 
     @GetMapping
-    public ResponseEntity<List<CorsiDTO>> getAll() {
-        List<Corsi> corsi = corsiService.findAll();
-        List<CorsiDTO> dto = corsi.stream().map(corsiMapper::toDTO).collect(Collectors.toList());
-        return ResponseEntity.ok(dto);
+    public List<CorsiDTO> getAllCorsi() {
+        return corsiService.findAllDTO();
     }
 
     @GetMapping("/{id}")
@@ -35,24 +35,9 @@ public class CorsiRestController {
     }
 
     @PostMapping
-    public ResponseEntity<CorsiDTO> create(@RequestBody CorsiDTO dto) {
-        Corsi corsi = new Corsi();
-        corsi.setNomeCorso(dto.getNomeCorso());
-        corsi.setAnnoAccademico(dto.getAnnoAccademico());
-        return ResponseEntity.ok(corsiMapper.toDTO(corsiService.save(corsi)));
+    public ResponseEntity<Corsi> createCorso(@RequestBody CorsiCreateDTO dto) {
+        Corsi saved = corsiService.saveFromDTO(dto);
+        return new ResponseEntity<>(saved, HttpStatus.CREATED);
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<CorsiDTO> update(@PathVariable Long id, @RequestBody CorsiDTO dto) {
-        Corsi esistente = corsiService.get(id);
-        esistente.setNomeCorso(dto.getNomeCorso());
-        esistente.setAnnoAccademico(dto.getAnnoAccademico());
-        return ResponseEntity.ok(corsiMapper.toDTO(corsiService.save(esistente)));
-    }
-
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
-        corsiService.delete(id);
-        return ResponseEntity.noContent().build();
-    }
 }

@@ -1,6 +1,6 @@
 package com.example.corso.mapper;
 
-import com.example.corso.dto.CorsiDTO;
+import com.example.corso.data.dto.CorsiDTO;
 import com.example.corso.entity.Corsi;
 import org.mapstruct.Mapper;
 

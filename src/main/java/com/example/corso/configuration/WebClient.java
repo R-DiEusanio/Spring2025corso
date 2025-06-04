@@ -1,0 +1,17 @@
+package com.example.corso.configuration;
+
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.web.client.RestClient;
+
+@Configuration
+public class WebClient {
+
+    @Bean
+    public WebClient webClient() {
+        return WebClient.builder().baseUrl(addressBaseUrl).build();
+    }
+
+}
+

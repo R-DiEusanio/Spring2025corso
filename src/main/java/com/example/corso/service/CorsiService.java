@@ -4,112 +4,110 @@ import com.example.corso.data.dto.CorsiCreateDTO;
 import com.example.corso.data.dto.CorsiDTO;
 import com.example.corso.data.dto.DocenteDTO;
 import com.example.corso.entity.Corsi;
+import com.example.corso.mapper.CorsiMapper;
 import com.example.corso.repository.CorsiRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
+import com.example.corso.validation.DocenteValidationService;
+import com.example.corso.validation.DiscentiValidationService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
-import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-
+import java.util.stream.Collectors;
 
 @Service
 public class CorsiService {
+    private static final Logger logger = LoggerFactory.getLogger(CorsiService.class);
+    
+    private final CorsiRepository corsiRepository;
+    private final DocenteValidationService docenteValidationService;
+    private final DiscentiValidationService discentiValidationService;
+    private final CorsiMapper corsiMapper;
 
-    @Autowired
-    private CorsiRepository corsiRepository;
-
-    @Autowired
-    private WebClient.Builder webClientBuilder;
-
-    @Value("${docenti.service.url}")
-    private String docentiServiceUrl;
+    public CorsiService(CorsiRepository corsiRepository, 
+                       DocenteValidationService docenteValidationService,
+                       DiscentiValidationService discentiValidationService,
+                       CorsiMapper corsiMapper) {
+        this.corsiRepository = corsiRepository;
+        this.docenteValidationService = docenteValidationService;
+        this.discentiValidationService = discentiValidationService;
+        this.corsiMapper = corsiMapper;
+    }
 
     public List<CorsiDTO> findAllDTO() {
         List<Corsi> corsi = corsiRepository.findAll();
-
-        return corsi.stream().map(corso -> {
-            CorsiDTO dto = new CorsiDTO();
-            dto.setId(corso.getId());
-            dto.setNomeCorso(corso.getNomeCorso());
-            dto.setAnnoAccademico(corso.getAnnoAccademico());
-
-            Long docenteId = corso.getIdDocente();
-
-            if (docenteId != null) {
-                try {
-                    DocenteDTO docente = getDocente(docenteId);
-                    dto.setNomeDocente(docente.getNome());
-                    dto.setCognomeDocente(docente.getCognome());
-                } catch (Exception e) {
-                    dto.setNomeDocente("Errore");
-                    dto.setCognomeDocente("Errore");
-                    System.out.println("Errore recuperando docente con ID: " + docenteId + " - " + e.getMessage());
-                }
-            } else {
-                dto.setNomeDocente("Nessun");
-                dto.setCognomeDocente("Docente");
-            }
-
-            return dto;
-        }).toList();
+        logger.debug("Trovati {} corsi", corsi.size());
+        
+        return corsi.stream()
+                .map(this::convertToFullDTO)
+                .collect(Collectors.toList());
     }
 
-    public DocenteDTO getDocente(Long docenteId) {
-        String url = docentiServiceUrl + "/docenti/" + docenteId;
-        System.out.println("CHIAMO IL DOCENTE SU: " + url);
-
-        return webClientBuilder.build()
-                .get()
-                .uri(url)
-                .retrieve()
-                .bodyToMono(DocenteDTO.class)
-                .block();
-    }
-
-    public Long getOrCreateDocenteId(String nome, String cognome) {
-        DocenteDTO[] docentiTrovati = webClientBuilder.build()
-                .get()
-                .uri(docentiServiceUrl + "/docenti/search?nome={nome}&cognome={cognome}", nome, cognome)
-                .retrieve()
-                .bodyToMono(DocenteDTO[].class)
-                .block();
-
-        if (docentiTrovati != null && docentiTrovati.length > 0) {
-            return docentiTrovati[0].getIdDocente();
+    private CorsiDTO convertToFullDTO(Corsi corso) {
+        CorsiDTO dto = corsiMapper.toDTO(corso);
+        if (corso.getId() != null) {
+            dto.setDiscenti(discentiValidationService.getDiscentiByCorsoId(corso.getId()));
         }
-
-        DocenteDTO nuovoDocente = new DocenteDTO();
-        nuovoDocente.setNome(nome);
-        nuovoDocente.setCognome(cognome);
-
-        DocenteDTO docenteCreato = webClientBuilder.build()
-                .post()
-                .uri(docentiServiceUrl + "/docenti")
-                .bodyValue(nuovoDocente)
-                .retrieve()
-                .bodyToMono(DocenteDTO.class)
-                .block();
-
-        return docenteCreato.getIdDocente();
+        return dto;
     }
 
-    public Corsi saveFromDTO(CorsiCreateDTO dto) {
-        Long docenteId = getOrCreateDocenteId(dto.getNomeDocente(), dto.getCognomeDocente());
+    public CorsiDTO getDTO(Long id) {
+        logger.debug("Recupero corso con ID: {}", id);
+        Corsi corso = getEntity(id);
+        return convertToFullDTO(corso);
+    }
+
+    private Corsi getEntity(Long id) {
+        return corsiRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Corso non trovato con id: " + id));
+    }
+
+    @Transactional
+    public CorsiDTO saveFromDTO(CorsiCreateDTO createDTO) {
+        logger.debug("Salvataggio nuovo corso: {}", createDTO.getNomeCorso());
+        
+        DocenteDTO docente = docenteValidationService.validateAndCreateIfNotExists(
+            createDTO.getIdDocente(),
+            createDTO.getNomeDocente(),
+            createDTO.getCognomeDocente()
+        );
 
         Corsi corso = new Corsi();
-        corso.setNomeCorso(dto.getNomeCorso());
-        corso.setAnnoAccademico(dto.getAnnoAccademico());
-        corso.setIdDocente(docenteId);
+        corso.setNomeCorso(createDTO.getNomeCorso());
+        corso.setAnnoAccademico(createDTO.getAnnoAccademico());
+        corso.setIdDocente(docente.getIdDocente());
 
-        return corsiRepository.save(corso);
+        Corsi savedCorso = corsiRepository.save(corso);
+        return getDTO(savedCorso.getId());
     }
 
-    public Corsi get(Long id) {
-        return corsiRepository.findById(id).orElseThrow();
+    public List<Corsi> findAll() {
+        return corsiRepository.findAll();
     }
 
+    public void delete(Long id) {
+        logger.debug("Eliminazione corso con ID: {}", id);
+        corsiRepository.deleteById(id);
+    }
 
+    @Transactional
+    public CorsiDTO update(Long id, CorsiCreateDTO updateDTO) {
+        logger.debug("Aggiornamento corso con ID: {}", id);
+        
+        Corsi corso = getEntity(id);
+        
+        DocenteDTO docente = docenteValidationService.validateAndCreateIfNotExists(
+            updateDTO.getIdDocente(),
+            updateDTO.getNomeDocente(),
+            updateDTO.getCognomeDocente()
+        );
 
+        corso.setNomeCorso(updateDTO.getNomeCorso());
+        corso.setAnnoAccademico(updateDTO.getAnnoAccademico());
+        corso.setIdDocente(docente.getIdDocente());
 
+        Corsi updatedCorso = corsiRepository.save(corso);
+        return getDTO(updatedCorso.getId());
+    }
 }

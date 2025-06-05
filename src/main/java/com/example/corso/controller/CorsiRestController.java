@@ -11,7 +11,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/corsi")
@@ -20,9 +19,6 @@ public class CorsiRestController {
     @Autowired
     private CorsiService corsiService;
 
-    @Autowired
-    private CorsiMapper corsiMapper;
-
     @GetMapping
     public List<CorsiDTO> getAllCorsi() {
         return corsiService.findAllDTO();
@@ -30,14 +26,25 @@ public class CorsiRestController {
 
     @GetMapping("/{id}")
     public ResponseEntity<CorsiDTO> getById(@PathVariable Long id) {
-        Corsi corsi = corsiService.get(id);
-        return ResponseEntity.ok(corsiMapper.toDTO(corsi));
+        CorsiDTO corso = corsiService.getDTO(id);
+        return ResponseEntity.ok(corso);
     }
 
     @PostMapping
-    public ResponseEntity<Corsi> createCorso(@RequestBody CorsiCreateDTO dto) {
-        Corsi saved = corsiService.saveFromDTO(dto);
+    public ResponseEntity<CorsiDTO> createCorso(@RequestBody CorsiCreateDTO dto) {
+        CorsiDTO saved = corsiService.saveFromDTO(dto);
         return new ResponseEntity<>(saved, HttpStatus.CREATED);
     }
 
+    @PutMapping("/{id}")
+    public ResponseEntity<CorsiDTO> updateCorso(@PathVariable Long id, @RequestBody CorsiCreateDTO dto) {
+        CorsiDTO updated = corsiService.update(id, dto);
+        return ResponseEntity.ok(updated);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteCorso(@PathVariable Long id) {
+        corsiService.delete(id);
+        return ResponseEntity.noContent().build();
+    }
 }

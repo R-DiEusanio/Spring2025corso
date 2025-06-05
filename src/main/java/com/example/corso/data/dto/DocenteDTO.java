@@ -1,8 +1,10 @@
 package com.example.corso.data.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class DocenteDTO {
 
+    @JsonProperty("id_docente")
     private Long idDocente;
     private String nome;
     private String cognome;
@@ -30,6 +32,4 @@ public class DocenteDTO {
     public void setCognome(String cognome) {
         this.cognome = cognome;
     }
-
 }
-

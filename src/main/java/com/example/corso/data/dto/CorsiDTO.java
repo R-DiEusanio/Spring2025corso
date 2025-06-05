@@ -1,15 +1,24 @@
 package com.example.corso.data.dto;
 
-public class CorsiDTO {
+import java.util.List;
 
+public class CorsiDTO {
     private Long id;
     private String nomeCorso;
     private Integer annoAccademico;
+    private Long idDocente;
     private String nomeDocente;
     private String cognomeDocente;
+    private List<DiscenteDTO> discenti;  // Nuovo campo
 
-    public CorsiDTO() {}
+    public List<DiscenteDTO> getDiscenti() {
+        return discenti;
+    }
 
+    public void setDiscenti(List<DiscenteDTO> discenti) {
+        this.discenti = discenti;
+    }
+    
     public Long getId() {
         return id;
     }
@@ -32,6 +41,14 @@ public class CorsiDTO {
 
     public void setAnnoAccademico(Integer annoAccademico) {
         this.annoAccademico = annoAccademico;
+    }
+
+    public Long getIdDocente() {
+        return idDocente;
+    }
+
+    public void setIdDocente(Long idDocente) {
+        this.idDocente = idDocente;
     }
 
     public String getNomeDocente() {

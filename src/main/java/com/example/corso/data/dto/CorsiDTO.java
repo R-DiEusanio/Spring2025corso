@@ -3,13 +3,13 @@ package com.example.corso.data.dto;
 import java.util.List;
 
 public class CorsiDTO {
+
     private Long id;
     private String nomeCorso;
     private Integer annoAccademico;
-    private Long idDocente;
-    private String nomeDocente;
-    private String cognomeDocente;
-    private List<DiscenteDTO> discenti;  // Nuovo campo
+    private DocenteDTO docenteDTO;
+
+    private List<DiscenteDTO> discenti;
 
     public List<DiscenteDTO> getDiscenti() {
         return discenti;
@@ -17,14 +17,6 @@ public class CorsiDTO {
 
     public void setDiscenti(List<DiscenteDTO> discenti) {
         this.discenti = discenti;
-    }
-    
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
     }
 
     public String getNomeCorso() {
@@ -43,27 +35,19 @@ public class CorsiDTO {
         this.annoAccademico = annoAccademico;
     }
 
-    public Long getIdDocente() {
-        return idDocente;
+    public DocenteDTO getDocenteDTO() {
+        return docenteDTO;
     }
 
-    public void setIdDocente(Long idDocente) {
-        this.idDocente = idDocente;
+    public void setDocenteDTO(DocenteDTO docenteDTO) {
+        this.docenteDTO = docenteDTO;
     }
 
-    public String getNomeDocente() {
-        return nomeDocente;
+    public Long getId() {
+        return id;
     }
 
-    public void setNomeDocente(String nomeDocente) {
-        this.nomeDocente = nomeDocente;
-    }
-
-    public String getCognomeDocente() {
-        return cognomeDocente;
-    }
-
-    public void setCognomeDocente(String cognomeDocente) {
-        this.cognomeDocente = cognomeDocente;
+    public void setId(Long id) {
+        this.id = id;
     }
 }

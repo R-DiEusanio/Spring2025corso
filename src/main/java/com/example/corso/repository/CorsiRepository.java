@@ -2,6 +2,13 @@ package com.example.corso.repository;
 
 import com.example.corso.entity.Corsi;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 public interface CorsiRepository extends JpaRepository<Corsi, Long> {
+
+
+    @Query("SELECT c FROM Corsi c WHERE c.id = :id")
+    Corsi findCorsiById(@Param("id") Long id);
+
 }

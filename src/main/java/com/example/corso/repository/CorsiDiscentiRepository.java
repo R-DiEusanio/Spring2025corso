@@ -10,6 +10,9 @@ import java.util.List;
 
 @Repository
 public interface CorsiDiscentiRepository extends JpaRepository<CorsiDiscenti, Long> {
-    @Query("SELECT cd.discenteId FROM CorsiDiscenti cd WHERE cd.corsi.id = :corsoId")
-    List<Integer> findDiscentiIdsByCorsoId(@Param("corsoId") Long corsoId);
+
+    @Query("SELECT cd.discenteId FROM CorsiDiscenti cd WHERE cd.idCorso = :corsoId")
+    List<Long> findDiscentiIdsByCorsoId(@Param("corsoId") Long corsoId);
+
+    void deleteByIdCorso(Long idCorso);
 }

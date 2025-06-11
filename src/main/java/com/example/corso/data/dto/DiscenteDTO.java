@@ -3,6 +3,8 @@ package com.example.corso.data.dto;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 public class DiscenteDTO {
+
+    private Long idDiscente;
     private String nome;
     private String cognome;
     @JsonIgnore
@@ -14,12 +16,23 @@ public class DiscenteDTO {
 
     public DiscenteDTO() {}
 
-    public DiscenteDTO(String nome, String cognome, String matricola, Integer eta, String cittaResidenza) {
+    public DiscenteDTO(Long idDiscente,String nome, String cognome, String matricola, Integer eta, String cittaResidenza) {
+
+        this.idDiscente = idDiscente;
         this.nome = nome;
         this.cognome = cognome;
         this.matricola = matricola;
         this.eta = eta;
         this.cittaResidenza = cittaResidenza;
+
+    }
+
+    public Long getIdDiscente() {
+        return idDiscente;
+    }
+
+    public void setIdDiscente(Long id) {
+        this.idDiscente = id;
     }
 
     public String getNome() {

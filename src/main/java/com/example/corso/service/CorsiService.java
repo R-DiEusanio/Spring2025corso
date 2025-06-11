@@ -1,113 +1,210 @@
 package com.example.corso.service;
 
-import com.example.corso.data.dto.CorsiCreateDTO;
+import com.example.corso.client.DiscenteClient;
+import com.example.corso.client.DocenteClient;
 import com.example.corso.data.dto.CorsiDTO;
+import com.example.corso.data.dto.DiscenteDTO;
 import com.example.corso.data.dto.DocenteDTO;
 import com.example.corso.entity.Corsi;
+import com.example.corso.entity.CorsiDiscenti;
 import com.example.corso.mapper.CorsiMapper;
+import com.example.corso.repository.CorsiDiscentiRepository;
 import com.example.corso.repository.CorsiRepository;
-import com.example.corso.validation.DocenteValidationService;
-import com.example.corso.validation.DiscentiValidationService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import jakarta.persistence.EntityNotFoundException;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Objects;
+
+import java.util.ArrayList;
 
 @Service
 public class CorsiService {
-    private static final Logger logger = LoggerFactory.getLogger(CorsiService.class);
-    
-    private final CorsiRepository corsiRepository;
-    private final DocenteValidationService docenteValidationService;
-    private final DiscentiValidationService discentiValidationService;
-    private final CorsiMapper corsiMapper;
 
-    public CorsiService(CorsiRepository corsiRepository, 
-                       DocenteValidationService docenteValidationService,
-                       DiscentiValidationService discentiValidationService,
-                       CorsiMapper corsiMapper) {
-        this.corsiRepository = corsiRepository;
-        this.docenteValidationService = docenteValidationService;
-        this.discentiValidationService = discentiValidationService;
-        this.corsiMapper = corsiMapper;
+    @Autowired
+    CorsiRepository corsiRepository;
+
+    @Autowired
+    CorsiMapper corsiMapper;
+
+    @Autowired
+    DocenteClient docenteClient;
+
+    @Autowired
+    DiscenteClient discenteClient;
+
+    @Autowired
+    CorsiDiscentiRepository corsiDiscentiRepository;
+
+    public List<CorsiDTO> findAll() {
+        return corsiRepository.findAll().stream()
+                .map(corso -> {
+                    CorsiDTO dto = corsiMapper.corsiToDto(corso);
+                    loadDocenteOnCorso(dto, corso.getIdDocente());
+                    loadDiscentiOnCorso(dto);
+                    return dto;
+                })
+                .toList();
     }
 
-    public List<CorsiDTO> findAllDTO() {
-        List<Corsi> corsi = corsiRepository.findAll();
-        logger.debug("Trovati {} corsi", corsi.size());
-        
-        return corsi.stream()
-                .map(this::convertToFullDTO)
-                .collect(Collectors.toList());
-    }
+    @Transactional
+    public CorsiDTO save(CorsiDTO corsiDTO) {
+        Long idDocente = docenteClient.createOrValidateDocente(corsiDTO.getDocenteDTO()).getIdDocente();
+        Corsi corsi = corsiMapper.corsoToEntity(corsiDTO);
+        corsi.setIdDocente(idDocente);
+        Corsi savedCorsi = corsiRepository.save(corsi);
 
-    private CorsiDTO convertToFullDTO(Corsi corso) {
-        CorsiDTO dto = corsiMapper.toDTO(corso);
-        if (corso.getId() != null) {
-            dto.setDiscenti(discentiValidationService.getDiscentiByCorsoId(corso.getId()));
-        }
+        saveDiscenti(corsiDTO,savedCorsi.getId());
+        CorsiDTO dto = corsiMapper.corsiToDto(savedCorsi);
+        loadDocenteOnCorso(dto, savedCorsi.getIdDocente());
+        loadDiscentiOnCorso(dto);
+
         return dto;
-    }
 
-    public CorsiDTO getDTO(Long id) {
-        logger.debug("Recupero corso con ID: {}", id);
-        Corsi corso = getEntity(id);
-        return convertToFullDTO(corso);
-    }
-
-    private Corsi getEntity(Long id) {
-        return corsiRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Corso non trovato con id: " + id));
     }
 
     @Transactional
-    public CorsiDTO saveFromDTO(CorsiCreateDTO createDTO) {
-        logger.debug("Salvataggio nuovo corso: {}", createDTO.getNomeCorso());
-        
-        DocenteDTO docente = docenteValidationService.validateAndCreateIfNotExists(
-            createDTO.getIdDocente(),
-            createDTO.getNomeDocente(),
-            createDTO.getCognomeDocente()
-        );
+    public CorsiDTO update(CorsiDTO corsiDTO) {
+        Corsi corsi = corsiRepository.findCorsiById(corsiDTO.getId());
 
-        Corsi corso = new Corsi();
-        corso.setNomeCorso(createDTO.getNomeCorso());
-        corso.setAnnoAccademico(createDTO.getAnnoAccademico());
-        corso.setIdDocente(docente.getIdDocente());
+        Long idDocente = null;
+        if (!Objects.isNull(corsiDTO.getDocenteDTO())) {
+            idDocente = createOrValidateDocente(corsiDTO.getDocenteDTO());
+        }
 
-        Corsi savedCorso = corsiRepository.save(corso);
-        return getDTO(savedCorso.getId());
+        if (corsi == null) {
+            throw new EntityNotFoundException("Corsi non trovato");
+        }
+        corsi.setNomeCorso(corsiDTO.getNomeCorso());
+        corsi.setAnnoAccademico(corsiDTO.getAnnoAccademico());
+        corsi.setIdDocente(corsiDTO.getDocenteDTO().getIdDocente());
+        Corsi savedCorsi = corsiRepository.save(corsi);
+        saveDiscenti(corsiDTO, savedCorsi.getId());
+
+        return corsiMapper.corsiToDto(savedCorsi);
+
+
+        }
+// delete
+
+@Transactional
+public void delete(Long id) {
+    Corsi corso = corsiRepository.findById(id)
+            .orElseThrow(() -> new EntityNotFoundException("Corso con ID " + id + " non trovato."));
+
+    List<Long> discentiAssociati = corsiDiscentiRepository.findDiscentiIdsByCorsoId(id);
+    if (!discentiAssociati.isEmpty()) {
+
+        corsiDiscentiRepository.deleteByIdCorso(id);
     }
 
-    public List<Corsi> findAll() {
-        return corsiRepository.findAll();
+    corsiRepository.delete(corso);
+}
+
+    // DOCENTI
+
+    private void loadDocenteOnCorso(CorsiDTO corsoDTO, Long idDocente ) {
+        corsoDTO.setDocenteDTO(docenteClient.getDocenteById(idDocente));
     }
 
-    public void delete(Long id) {
-        logger.debug("Eliminazione corso con ID: {}", id);
-        corsiRepository.deleteById(id);
+    private Long createOrValidateDocente(DocenteDTO docenteDTO) {
+        if (Objects.isNull(docenteDTO)) return null;
+        else {
+            DocenteDTO esistente = docenteClient.getDocenteById(docenteDTO.getIdDocente());
+            Long idDocente = (esistente != null) ? esistente.getIdDocente() : null;
+            if (idDocente == null) idDocente = docenteClient.createOrValidateDocente(docenteDTO).getIdDocente();
+            return idDocente;
+
+        }
     }
 
-    @Transactional
-    public CorsiDTO update(Long id, CorsiCreateDTO updateDTO) {
-        logger.debug("Aggiornamento corso con ID: {}", id);
-        
-        Corsi corso = getEntity(id);
-        
-        DocenteDTO docente = docenteValidationService.validateAndCreateIfNotExists(
-            updateDTO.getIdDocente(),
-            updateDTO.getNomeDocente(),
-            updateDTO.getCognomeDocente()
-        );
+    // DISCENTI
 
-        corso.setNomeCorso(updateDTO.getNomeCorso());
-        corso.setAnnoAccademico(updateDTO.getAnnoAccademico());
-        corso.setIdDocente(docente.getIdDocente());
+    private void loadDiscentiOnCorso(CorsiDTO corsiDTO) {
+        if (corsiDTO == null || corsiDTO.getId() == null) {
+            System.err.println("CorsiDTO nullo o privo di ID");
+            return;
+        }
 
-        Corsi updatedCorso = corsiRepository.save(corso);
-        return getDTO(updatedCorso.getId());
+        Corsi corso = corsiRepository.findCorsiById(corsiDTO.getId());
+        if (corso == null) {
+            System.err.println("Corso non trovato per ID: " + corsiDTO.getId());
+            return;
+        }
+
+        System.out.println("Caricamento discenti per corso ID: " + corso.getId());
+
+        try {
+            List<Long> discentiIds = corsiDiscentiRepository.findDiscentiIdsByCorsoId(corso.getId());
+            System.out.println("Discenti trovati (ID): " + discentiIds);
+
+            if (discentiIds == null || discentiIds.isEmpty()) {
+                System.out.println("Nessun discente associato al corso");
+                corsiDTO.setDiscenti(new ArrayList<>());
+                return;
+            }
+
+            List<DiscenteDTO> discenti = new ArrayList<>();
+            for (Long discenteId : discentiIds) {
+                try {
+                    System.out.println("Recupero discente con ID: " + discenteId);
+                    DiscenteDTO discente = discenteClient.getDiscenteById(discenteId);
+                    if (discente != null) {
+                        discenti.add(discente);
+                    } else {
+                        System.err.println("Discente non trovato per ID: " + discenteId);
+                    }
+                } catch (Exception e) {
+                    System.err.println("Errore nel recupero del discente con ID " + discenteId + ": " + e.getMessage());
+                }
+            }
+
+            corsiDTO.setDiscenti(discenti);
+            System.out.println("Totale discenti caricati: " + discenti.size());
+
+        } catch (Exception e) {
+            System.err.println("Errore generale nel caricamento dei discenti per corso ID " + corso.getId() + ": " + e.getMessage());
+            e.printStackTrace();
+        }
     }
+
+
+    private void saveDiscenti(CorsiDTO corsiDTO, Long idCorso) {
+    if (corsiDTO.getDiscenti() == null || corsiDTO.getDiscenti().isEmpty()) {
+        return;
+    }
+
+    removeExistingDiscenti(idCorso);
+
+    for (DiscenteDTO discenteDTO : corsiDTO.getDiscenti()) {
+        try {
+            DiscenteDTO esistente = null;
+            if (discenteDTO.getIdDiscente() != null) {
+                esistente = discenteClient.getDiscenteById(discenteDTO.getIdDiscente());
+            }
+
+            Long idDiscente;
+            if (esistente == null) {
+                DiscenteDTO nuovoDiscente = discenteClient.createDiscente(discenteDTO);
+                idDiscente = nuovoDiscente.getIdDiscente();
+            } else {
+                idDiscente = esistente.getIdDiscente();
+            }
+
+            CorsiDiscenti corsiDiscenti = new CorsiDiscenti(idCorso, idDiscente);
+            corsiDiscentiRepository.save(corsiDiscenti);
+
+        } catch (Exception e) {
+            System.err.println("Errore nel salvataggio discente ID: " + discenteDTO.getIdDiscente() + " - " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+}
+
+    private void removeExistingDiscenti(Long idCorso) {
+        corsiDiscentiRepository.deleteByIdCorso(idCorso);
+    }
+
 }

@@ -2,33 +2,27 @@ package com.example.corso.entity;
 import jakarta.persistence.Table;
 
 import jakarta.persistence.*;
+
 import java.io.Serializable;
-import java.util.Objects;
 
 @Entity
-@Table(name = "corsi_discenti", uniqueConstraints = {
-    @UniqueConstraint(name = "uk_corso_discente", columnNames = {"corso_id", "discente_id"})
-})
-public class CorsiDiscenti implements Serializable {
-    
-    private static final long serialVersionUID = 1L;
-    
+@Table(name = "corsi_discenti")
+public class CorsiDiscenti {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     private Long id;
     
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "corso_id", nullable = false)
-    private Corsi corsi;
-    
-    @Column(name = "discente_id", nullable = false)
-    private Integer discenteId;
+    @Column(name = "id_corso")
+    private Long idCorso;
+
+    @Column(name = "discente_id")
+    private Long discenteId;
     
     public CorsiDiscenti() {}
     
-    public CorsiDiscenti(Corsi corsi, Integer discenteId) {
-        this.corsi = corsi;
+    public CorsiDiscenti(Long idCorso, Long discenteId) {
+        this.idCorso = idCorso;
         this.discenteId = discenteId;
     }
     
@@ -39,44 +33,21 @@ public class CorsiDiscenti implements Serializable {
     public void setId(Long id) {
         this.id = id;
     }
-    
-    public Corsi getCorso() {
-        return corsi;
+
+    public Long getIdCorso() {
+        return idCorso;
     }
-    
-    public void setCorso(Corsi corsi) {
-        this.corsi = corsi;
+
+    public void setIdCorso(Long idCorso) {
+        this.idCorso = idCorso;
     }
-    
-    public Integer getDiscenteId() {
+
+    public Long getDiscenteId() {
         return discenteId;
     }
     
-    public void setDiscenteId(Integer studenteId) {
-        this.discenteId = studenteId;
+    public void setDiscenteId(Long DiscenteId) {
+        this.discenteId = DiscenteId;
     }
-    
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        CorsiDiscenti that = (CorsiDiscenti) o;
-        return Objects.equals(id, that.id) &&
-               Objects.equals(corsi, that.corsi) &&
-               Objects.equals(discenteId, that.discenteId);
-    }
-    
-    @Override
-    public int hashCode() {
-        return Objects.hash(id, corsi, discenteId);
-    }
-    
-    @Override
-    public String toString() {
-        return "CorsiStudenti{" +
-               "id=" + id +
-               ", corso=" + (corsi != null ? corsi.getId() : null) +
-               ", studenteId=" + discenteId +
-               '}';
-    }
+
 }

@@ -16,7 +16,7 @@ public class Corsi {
     @Column(name = "anno_accademico", nullable = false)
     private Integer annoAccademico;
 
-    @Column(name = "id_docente",nullable = false)
+    @Column(name = "id_docente")
     private Long idDocente;
 
     public Corsi() {}

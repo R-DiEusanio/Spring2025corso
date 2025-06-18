@@ -8,8 +8,9 @@ import com.example.corso.data.dto.DocenteDTO;
 import com.example.corso.entity.Corsi;
 import com.example.corso.entity.CorsiDiscenti;
 import com.example.corso.mapper.CorsiMapper;
-import com.example.corso.repository.CorsiDiscentiRepository;
-import com.example.corso.repository.CorsiRepository;
+
+import com.example.corso.repository.corsi.CorsiDiscentiRepository;
+import com.example.corso.repository.corsi.CorsiRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;

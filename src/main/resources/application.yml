@@ -1,0 +1,50 @@
+spring:
+  application:
+    name: corso
+  mvc:
+    view:
+      prefix: /WEB-INF/jsp/
+      suffix: .jsp
+  datasource:
+    jdbcUrl: jdbc:postgresql://localhost:5432/Corsi
+    username: postgres
+    password: Riccardo2001
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+    packages-to-scan: com.example.model
+    show-sql: true
+  auth:
+    datasource:
+      jdbcUrl: jdbc:postgresql://localhost:5432/Credenziali
+      username: postgres
+      password: Riccardo2001
+      driver-class-name: org.postgresql.Driver
+
+server:
+  port: 8081
+
+discente:
+  service:
+    url: http://localhost:8080
+
+docente:
+  service:
+    url: http://localhost:8080
+
+logging:
+  level:
+    com:
+      example:
+        corso: DEBUG
+    org:
+      springframework:
+        web:
+          reactive:
+            function:
+              client:
+                ExchangeFunctions: DEBUG

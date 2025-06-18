@@ -1,4 +1,4 @@
-package com.example.corso.repository;
+package com.example.corso.repository.corsi;
 
 import com.example.corso.entity.CorsiDiscenti;
 import org.springframework.data.jpa.repository.JpaRepository;

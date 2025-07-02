@@ -30,11 +30,11 @@ server:
 
 discente:
   service:
-    url: http://localhost:8080
+    url: http://localhost:8085
 
 docente:
   service:
-    url: http://localhost:8080
+    url: http://localhost:8085
 
 logging:
   level:
@@ -48,3 +48,6 @@ logging:
             function:
               client:
                 ExchangeFunctions: DEBUG
+
+jwt:
+  secret: mySecretKeyForJWTTokenGenerationThatShouldBeAtLeast256BitsLong
